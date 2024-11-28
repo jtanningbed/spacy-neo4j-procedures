@@ -50,22 +50,18 @@ class SpacyNLPProcedure:
             # Register entity extraction
             session.run(
                 """
-                CALL apoc.custom.installProcedure(
-                    'spacy.nlp.extract_entities(text :: STRING) :: 
-                    (text :: STRING, label :: STRING, start :: INTEGER, end :: INTEGER)',
-                    'WITH $text AS text
-                    WITH apoc.convert.fromJsonMap($entities) AS entities
-                    UNWIND entities AS entity
-                    RETURN 
-                        entity.text AS text,
-                        entity.label AS label,
-                        entity.start AS start,
-                        entity.end AS end',
-                    'neo4j',
-                    'READ',
-                    'Extract entities from text using spaCy NLP as a fallback provider'
-                );
-                """
+            CALL apoc.custom.installProcedure(
+                'custom.spacy.nlp.extract_entities(text :: STRING) :: 
+                 (value :: MAP)',
+                'WITH $text AS text
+                RETURN apoc.convert.toJson({
+                    entities: $entities
+                }) AS value',
+                'neo4j',
+                mode='READ',
+                description='Extract entities from text using spaCy NLP'
+            );
+            """
             )
             logger.info("Registered custom.spacy.nlp.extract_entities procedure")
 
