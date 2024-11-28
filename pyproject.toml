@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11.10"
 dependencies = [
     "en-core-web-sm",
-    "neo4j-driver>=5.26.0",
+    "neo4j>=5.26.0",
     "spacy>=3.8.2",
 ]
 
@@ -24,7 +24,7 @@ packages = ["src/neo4j_spacy_procedures"]
 [tool.uv.sources]
 en-core-web-sm = { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl" }
 
-[dependency-groups]
+[project.optional-dependencies]
 dev = [
     "pytest>=8.3.3",
     "ruff>=0.2.0",
