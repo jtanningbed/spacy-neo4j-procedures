@@ -1,4 +1,5 @@
 """Neo4j procedures using spaCy for NLP tasks."""
+
 import logging
 from typing import Dict, Optional
 
@@ -21,7 +22,9 @@ def setup_logging(name: Optional[str] = None) -> logging.Logger:
 
     return logger
 
+
 logger = setup_logging(__name__)
+
 
 class SpacyNLPProcedure:
     """Provides Neo4j procedures powered by spaCy NLP."""
@@ -48,13 +51,19 @@ class SpacyNLPProcedure:
             session.run(
             """
             CALL apoc.custom.declareProcedure(
-                'spacy.analyze(text :: STRING) :: (text :: STRING, entities ::
-                LIST OF MAP, tokens :: LIST OF MAP)', 'MATCH (n:Document)
-                WHERE n.text IS NOT NULL CALL apoc.load.jsonParams($url,
-                {text: n.text}, null, null) YIELD value
-                RETURN n.text as text, value.entities as entities, value.tokens
-                as tokens',
-                'READ', 'Analyzes text using spaCy NLP integration'
+                'spacy.nlp.extract_entities(text :: STRING) :: 
+                (text :: STRING, label :: STRING, start :: INTEGER, end :: INTEGER)',
+                'WITH $text AS text
+                CALL apoc.load.jsonParams($spacy_endpoint, {text: text}, null, null) 
+                YIELD value
+                UNWIND value.entities AS entity
+                RETURN 
+                    entity.text AS text,
+                    entity.label AS label,
+                    entity.start AS start,
+                    entity.end AS end',
+                'READ',
+                'Extract entities from text using spaCy NLP as a fallback provider'
             );
             """
             )
@@ -78,7 +87,7 @@ class SpacyNLPProcedure:
                 "type": ent.label_,
                 "score": 1.0,  # spaCy doesn't provide confidence scores
                 "beginOffset": ent.start_char,
-                "endOffset": ent.end_char
+                "endOffset": ent.end_char,
             }
             for ent in doc.ents
         ]
@@ -87,5 +96,5 @@ class SpacyNLPProcedure:
             "entities": entities,
             "language": doc.lang_,
             "text": text,
-            "provider": "spacy"
+            "provider": "spacy",
         }

@@ -10,16 +10,25 @@ RUN apt-get update && apt-get install -y \
 RUN pip3 install neo4j-driver spacy
 RUN python3 -m spacy download en_core_web_sm
 
-# Copy the procedure file
-COPY spacy_procedure.py /var/lib/neo4j/
+# Create a directory for your project
+WORKDIR /app
 
-# Set environment variables
+# Copy your project files
+COPY ./src/spacy_neo4j_procedures /app/spacy_neo4j_procedures
+COPY ./setup.py /app/
+
+# Install your package
+RUN pip3 install -e .
+
+# Set Neo4j environment variables
 ENV NEO4J_apoc_export_file_enabled=true
 ENV NEO4J_apoc_import_file_enabled=true
-ENV NEO4J_dbms_security_procedures_unrestricted=custom.*
+ENV NEO4J_dbms_security_procedures_unrestricted=apoc.*,spacy.*
+ENV NEO4J_dbms_security_procedures_whitelist=apoc.*,spacy.*
+ENV NEO4J_PLUGINS=["apoc"]
 
-# Enable Python procedures
-ENV NEO4J_dbms_security_procedures_whitelist=custom.nlp.*
+# Copy startup script
+COPY ./docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 
-# Start Neo4j and register procedures
-CMD ["sh", "-c", "python3 /var/lib/neo4j/spacy_procedure.py & neo4j start"]
+ENTRYPOINT ["/docker-entrypoint.sh"]

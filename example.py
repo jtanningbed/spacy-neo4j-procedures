@@ -20,8 +20,8 @@ proc = SpacyNLPProcedure("bolt://localhost:7687", "neo4j", "password")
 # Register the procedure
 proc.register_procedures()
 
-# Test with a simple text
-text = "Apple is looking at buying U.K. startup for $1 billion"
-with proc.driver.session() as session:
-    result = session.run("CALL custom.nlp.spacy.entities($text)", text=text)
-    print(result.single())
+# # Test with a simple text
+# text = "Apple is looking at buying U.K. startup for $1 billion"
+# with proc.driver.session() as session:
+#     result = session.run("CALL custom.nlp.spacy.entities($text)", text=text)
+#     print(result.single())
