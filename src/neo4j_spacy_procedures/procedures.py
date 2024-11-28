@@ -1,8 +1,9 @@
 """Neo4j procedures using spaCy for NLP tasks."""
+import logging
 from typing import Dict, Optional
+
 import spacy
 from neo4j import GraphDatabase
-import logging
 
 
 def setup_logging(name: Optional[str] = None) -> logging.Logger:
@@ -45,11 +46,16 @@ class SpacyNLPProcedure:
         with self.driver.session() as session:
             # Register entity extraction
             session.run(
-                """
-                CALL apoc.custom.declareProcedure('custom.nlp.spacy.entities(text :: STRING)',
-                'RETURNS MAP
-                LANGUAGE PYTHON
-                CALL custom.nlp.spacy.extract_entities($text) as entities')
+            """
+            CALL apoc.custom.declareProcedure(
+                'spacy.analyze(text :: STRING) :: (text :: STRING, entities ::
+                LIST OF MAP, tokens :: LIST OF MAP)', 'MATCH (n:Document)
+                WHERE n.text IS NOT NULL CALL apoc.load.jsonParams($url,
+                {text: n.text}, null, null) YIELD value
+                RETURN n.text as text, value.entities as entities, value.tokens
+                as tokens',
+                'READ', 'Analyzes text using spaCy NLP integration'
+            );
             """
             )
             logger.info("Registered custom.nlp.spacy.entities procedure")
