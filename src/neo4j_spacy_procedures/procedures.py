@@ -44,10 +44,9 @@ class SpacyNLPProcedure:
         """Close the Neo4j driver connection."""
         self.driver.close()
 
-
     def register_procedures(self):
         """Register all spaCy procedures with Neo4j."""
-        with self.driver.session() as session:
+        with self.driver.session(database="system") as session:
             # Register entity extraction
             session.run(
                 """
@@ -55,24 +54,20 @@ class SpacyNLPProcedure:
                     'spacy.nlp.extract_entities(text :: STRING) :: 
                     (text :: STRING, label :: STRING, start :: INTEGER, end :: INTEGER)',
                     'WITH $text AS text
-                    CALL apoc.http.post($spacy_endpoint, 
-                        {text: text}, 
-                        null, 
-                        {Content-Type: "application/json"}
-                    ) YIELD value
-                    WITH apoc.convert.fromJsonList(value.body) AS entities
+                    WITH apoc.convert.fromJsonMap($entities) AS entities
                     UNWIND entities AS entity
                     RETURN 
                         entity.text AS text,
                         entity.label AS label,
                         entity.start AS start,
                         entity.end AS end',
+                    'neo4j',
                     'READ',
                     'Extract entities from text using spaCy NLP as a fallback provider'
                 );
                 """
             )
-            logger.info("Registered custom.nlp.spacy.entities procedure")
+            logger.info("Registered custom.spacy.nlp.extract_entities procedure")
 
     def extract_entities(self, text: str) -> Dict:
         """
@@ -89,10 +84,10 @@ class SpacyNLPProcedure:
         entities = [
             {
                 "text": ent.text,
-                "type": ent.label_,
+                "label": ent.label_,
                 "score": 1.0,  # spaCy doesn't provide confidence scores
-                "beginOffset": ent.start_char,
-                "endOffset": ent.end_char,
+                "start": ent.start_char,
+                "end": ent.end_char,
             }
             for ent in doc.ents
         ]
